@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Linux Quest — Web Prototype</title>
+  <style>
+    :root{--bg:#0b1220;--panel:#07101a;--text:#9ae6b4;--muted:#cbd5e1;--accent:#ffd166}
+    html,body{height:100%;margin:0;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;background:linear-gradient(180deg,#071229 0%, #021018 100%);color:var(--text)}
+    .container{max-width:980px;margin:36px auto;padding:20px}
+    .game{background:var(--panel);border-radius:12px;padding:16px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+    .terminal{background:#000;border-radius:8px;padding:12px;height:420px;overflow:auto;color:var(--text);line-height:1.45}
+    .prompt-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .input{flex:1;background:transparent;border:0;color:var(--text);outline:none;font:inherit}
+    .status{margin-top:10px;color:var(--accent);font-weight:600}
+    .hint{margin-top:8px;color:var(--muted);font-size:13px}
+    .command{color:#cbd5e1}
+    .success{color:#8ef5b6}
+    .error{color:#ff9aa2}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{background:#06202a;border:1px solid rgba(255,255,255,.04);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    @media (max-width:600px){.terminal{height:360px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin:0 0 10px 0;color:var(--accent)">Linux Quest — Web Prototype</h1>
+    <div class="game">
+      <div id="terminal" class="terminal" aria-live="polite"></div>
+
+      <form id="cmdform" class="prompt-row" autocomplete="off">
+        <div style="color:var(--muted)">$</div>
+        <input id="cmdinput" class="input" autofocus placeholder="type a command (try: help)" />
+      </form>
+
+      <div class="controls">
+        <button id="btn-help" type="button">Help</button>
+        <button id="btn-clear" type="button">Clear</button>
+        <button id="btn-copy" type="button">Copy session</button>
+      </div>
+
+      <div id="status" class="status">Level 1: Navigate to <code>/var/logs</code></div>
+      <div class="hint">Supported commands: <span class="command">help</span>, <span class="command">pwd</span>, <span class="command">ls</span>, <span class="command">cd</span></div>
+      <footer>Open this file in your browser to play. This is a single-file prototype (no server required).</footer>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      // --- Fake file system ---
+      const fs = {
+        '/': ['home','var','etc'],
+        '/home': ['captain','crew'],
+        '/var': ['logs'],
+        '/var/logs': ['system.log','engine.log'],
+        '/etc': ['config.txt']
+      };
+
+      // --- State ---
+      let cwd = '/';
+      let output = [];
+      let level = 1;
+
+      // --- DOM ---
+      const term = document.getElementById('terminal');
+      const form = document.getElementById('cmdform');
+      const input = document.getElementById('cmdinput');
+      const status = document.getElementById('status');
+
+      // --- Helpers ---
+      function pushLine(text, cls){
+        const d = document.createElement('div');
+        if(cls) d.className = cls;
+        d.textContent = text;
+        term.appendChild(d);
+        term.scrollTop = term.scrollHeight;
+      }
+
+      function showPrompt(){
+        // show nothing — prompt is the input field. Keep UI minimal.
+      }
+
+      function normalizePath(path){
+        if(!path) return cwd;
+        if(path.startsWith('/')){
+          // collapse multiple slashes
+          path = path.replace(/\/+/g,'/');
+          if(path !== '/' && path.endsWith('/')) path = path.replace(/\/+$/,'');
+          return path || '/';
+        }
+        // relative
+        if(path === '..'){
+          if(cwd === '/') return '/';
+          const parts = cwd.split('/').filter(Boolean);
+          parts.pop();
+          return '/' + parts.join('/') || '/';
+        }
+        // other relative path (no .. handling for brevity)
+        return cwd === '/' ? `/${path}` : `${cwd}/${path}`;
+      }
+
+      function cmd_help(){
+        pushLine('Available commands: help, pwd, ls, cd <dir>', 'command');
+      }
+
+      function cmd_pwd(){
+        pushLine(cwd);
+      }
+
+      function cmd_ls(args){
+        const target = args[0] ? normalizePath(args[0]) : cwd;
+        const listing = fs[target];
+        if(!listing){ pushLine(`ls: cannot access '${args[0]||"."}': No such file or directory`, 'error'); return; }
+        pushLine(listing.join('  '));
+      }
+
+      function cmd_cd(args){
+        if(!args[0]){ pushLine('cd: missing operand', 'error'); return; }
+        const targetRaw = args[0];
+        const target = normalizePath(targetRaw);
+        if(fs[target]){
+          cwd = target;
+          // level check
+          if(level === 1 && target === '/var/logs'){
+            level = 2;
+            status.textContent = '✅ Level 1 complete! Level 2 unlocked.';
+            pushLine('✅ Level 1 complete! You found the logs. Proceed to Level 2!', 'success');
+          }
+        } else {
+          pushLine(`cd: no such file or directory: ${targetRaw}`, 'error');
+        }
+      }
+
+      function runCommand(line){
+        const raw = line.trim();
+        if(!raw) return;
+        pushLine(`$ ${raw}`, 'command');
+        const parts = raw.split(/\s+/);
+        const cmd = parts[0];
+        const args = parts.slice(1);
+        switch(cmd){
+          case 'help': cmd_help(); break;
+          case 'pwd': cmd_pwd(); break;
+          case 'ls': cmd_ls(args); break;
+          case 'cd': cmd_cd(args); break;
+          default: pushLine(`${cmd}: command not found`, 'error');
+        }
+      }
+
+      // --- Initial welcome ---
+      pushLine('Welcome to Linux Quest!');
+      pushLine("Type 'help' to see commands.", 'command');
+
+      // --- Event handlers ---
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const v = input.value;
+        runCommand(v);
+        input.value = '';
+        input.focus();
+      });
+
+      document.getElementById('btn-help').addEventListener('click', ()=>{ runCommand('help'); });
+      document.getElementById('btn-clear').addEventListener('click', ()=>{ term.innerHTML = ''; pushLine(''); });
+      document.getElementById('btn-copy').addEventListener('click', ()=>{
+        navigator.clipboard.writeText(Array.from(term.children).map(n=>n.textContent).join('\n'))
+          .then(()=>{ pushLine('Session copied to clipboard.', 'success'); })
+          .catch(()=>{ pushLine('Cannot copy to clipboard.', 'error'); });
+      });
+
+      // Keyboard shortcuts
+      window.addEventListener('keydown', (e)=>{
+        if(e.key === 'ArrowUp'){
+          // future: command history
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
