@@ -172,7 +172,7 @@
         if(args[0] === '-l'){
           const listing = state.fs[state.cwd] || [];
           listing.forEach(f=>{ const p = (state.cwd==='/'?`/${f}`:`${state.cwd}/${f}`); const perm = state.filePermissions[p]||'-rw-r--r--'; print(perm + ' ' + f); }); return; }
-        const target = args[0]?normalizePath(args[0]):state.cwd; const listing = state.fs[target]; if(!listing){ print(`ls: cannot access ${args[0] || '.'}: No such file or directory`,'error'); return; } print(listing.join('  ')); }
+        const target = args[0]?normalizePath(args[0]):state.cwd; const listing = state.fs[target]; if(!listing){ print(`ls: cannot access ${args[0]||'.'}: No such file or directory`,'error'); return; } print(listing.join('  ')); }
       function cmd_cd(args){ if(!args[0]){ print('cd: missing operand','error'); return; } const target = normalizePath(args[0]); if(state.fs[target]){ state.cwd = target; // triggers
           if(state.level===1 && target==='/vault/entrance'){ state.level=2; state.fs['/vault/entrance']=['alarm.txt']; print('✅ You broke into the vault!','success'); }
         } else print(`cd: no such file or directory: ${args[0]}`,'error'); }
@@ -181,8 +181,8 @@
       function cmd_rm(args){ if(!args[0]){ print('rm: missing operand','error'); return; } const file=args[0]; if(state.fs[state.cwd] && state.fs[state.cwd].includes(file)){ state.fs[state.cwd]=state.fs[state.cwd].filter(f=>f!==file); print(`${file} removed.`); checkLevel2(); } else print(`rm: cannot remove '${file}': No such file`,'error'); }
 
       function cmd_cat(args){ if(!args[0]){ print('cat: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ print(state.fileContents[target]); checkLevel3(target); } else print(`cat: ${args[0]}: No such file`,'error'); }
-      function cmd_head(args){ if(!args[0]){ print('head: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ state.fileContents[target].split('\\n').slice(0,5).forEach(l=>print(l)); checkLevel3(target); } else print(`head: cannot open '${args[0]}'`,'error'); }
-      function cmd_tail(args){ if(!args[0]){ print('tail: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ state.fileContents[target].split('\\n').slice(-5).forEach(l=>print(l)); checkLevel3(target); } else print(`tail: cannot open '${args[0]}'`,'error'); }
+      function cmd_head(args){ if(!args[0]){ print('head: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ state.fileContents[target].split('\n').slice(0,5).forEach(l=>print(l)); checkLevel3(target); } else print(`head: cannot open '${args[0]}'`,'error'); }
+      function cmd_tail(args){ if(!args[0]){ print('tail: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ state.fileContents[target].split('\n').slice(-5).forEach(l=>print(l)); checkLevel3(target); } else print(`tail: cannot open '${args[0]}'`,'error'); }
 
       function cmd_chmod(args){ if(args.length!==2 || args[0]!=='+x'){ print('Usage: chmod +x <file>','error'); return; } const file=args[1]; const target=normalizePath(file); const dir = target.split('/').slice(0,-1).join('/') || '/'; const fname = target.split('/').pop(); if(state.fs[dir] && state.fs[dir].includes(fname)){ state.filePermissions[target]='-rwxr-xr-x'; print(`Permissions updated for ${file}`); checkLevel4(target); } else print(`chmod: cannot access '${file}': No such file`,'error'); }
 
@@ -213,16 +213,25 @@
       document.getElementById('btn-clear').addEventListener('click', ()=>{ term.innerHTML=''; });
       document.getElementById('btn-save').addEventListener('click', ()=>saveState());
       document.getElementById('btn-load').addEventListener('click', ()=>{ const s = loadState(); if(s){ state = s; print('(state loaded)'); updateUI(); } else print('(no saved state)', 'error'); });
-      document.getElementById('btn-export').addEventListener('click', ()=>{ // trigger download of zip via creating blob from state export (handled by external script)\n        const payload = { html: generateIndexHtml(), readme: generateReadme() };\n        try{ window.parent.postMessage({type:'EXPORT_ZIP', payload}, '*'); print('(export requested)'); }catch(e){ print('(export not available in this host)','error'); }\n      });
+      document.getElementById('btn-export').addEventListener('click', ()=>{ // ask host to generate zip via window.postMessage
+        const payload = { html: generateIndexHtml(), readme: generateReadme() };
+        try{ window.parent.postMessage({type:'EXPORT_ZIP', payload}, '*'); print('(export requested)'); }catch(e){ print('(export not available in this host)','error'); }
+      });
 
       // keyboard: history and autocomplete
-      input.addEventListener('keydown', e=>{ if(e.key === 'ArrowUp'){ if(historyIndex>0) historyIndex--; input.value = history[historyIndex]||''; e.preventDefault(); } else if(e.key === 'ArrowDown'){ if(historyIndex<history.length) historyIndex++; input.value = history[historyIndex]||''; e.preventDefault(); } else if(e.key === 'Tab'){ e.preventDefault(); const cur = input.value.trim(); const opts = listFilesForAutocomplete(cur); if(opts.length) input.value = opts[0]; autoBox.style.display='none'; } });
+      input.addEventListener('keydown', e=>{
+        if(e.key === 'ArrowUp'){ if(historyIndex>0) historyIndex--; input.value = history[historyIndex]||''; e.preventDefault(); }
+        else if(e.key === 'ArrowDown'){ if(historyIndex<history.length) historyIndex++; input.value = history[historyIndex]||''; e.preventDefault(); }
+        else if(e.key === 'Tab'){ e.preventDefault(); const cur = input.value.trim(); const opts = listFilesForAutocomplete(cur); if(opts.length) input.value = opts[0]; autoBox.style.display='none'; }
+      });
 
-      input.addEventListener('input', e=>{ const cur = input.value.trim(); if(!cur){ autoBox.style.display='none'; return; } const opts = listFilesForAutocomplete(cur); showAutocomplete(opts, input.getBoundingClientRect().left); });
+      input.addEventListener('input', e=>{
+        const cur = input.value.trim(); if(!cur){ autoBox.style.display='none'; return; } const opts = listFilesForAutocomplete(cur); showAutocomplete(opts, input.getBoundingClientRect().left);
+      });
 
       // Export helpers
-      function generateIndexHtml(){ return `<!doctype html>\\n<html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Linux Treasure Hunt</title></head><body>\\n<!-- Single-file game: copy the content of index.html from this project -->\\n</body></html>`; }
-      function generateReadme(){ return `# Linux Treasure Hunt\\n\\nPlay the game by opening index.html in your browser.\\n\\nCommands: help, pwd, ls, cd, touch, rm, cat, head, tail, chmod, ping, scp, curl\\n\\nExport option requests the host to create a ZIP with index.html + README.md for GitHub Pages.`; }
+      function generateIndexHtml(){ return `<!doctype html>\n<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Linux Treasure Hunt</title></head><body>\n<!-- Single-file game: copy the content of index.html from this project -->\n</body></html>`; }
+      function generateReadme(){ return `# Linux Treasure Hunt\n\nPlay the game by opening index.html in your browser.\n\nCommands: help, pwd, ls, cd, touch, rm, cat, head, tail, chmod, ping, scp, curl\n\nExport option requests the host to create a ZIP with index.html + README.md for GitHub Pages.`; }
 
       // Load persisted state into UI on start
       updateUI(); // show progress and map
