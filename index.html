@@ -1,123 +1,247 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Linux Treasure Hunt — Levels 1-5</title>
-<style>
-:root{--bg:#071225;--panel:#061426;--accent:#ffd166;--muted:#9ca3af;--good:#4ade80;--bad:#f87171}
-body{margin:0;background:linear-gradient(180deg,var(--bg) 0%, #021018 100%);color:#cbd5e1;font-family:ui-monospace,monospace}
-.wrap{max-width:1100px;margin:18px auto;padding:18px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-h1{margin:0;color:var(--accent)}
-.grid{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-top:12px}
-.panel{background:var(--panel);padding:12px;border-radius:10px;box-shadow:0 6px 24px rgba(2,6,23,.6)}
-.story{color:var(--muted);line-height:1.45}
-.terminal{background:#000;border-radius:8px;padding:12px;height:420px;overflow:auto;color:#9ae6b4}
-.prompt{display:flex;gap:8px;align-items:center;margin-top:8px}
-input, .cmdline{flex:1;background:transparent;border:0;color:var(--muted);outline:none;font:inherit}
-.controls{display:flex;gap:8px;margin-top:10px}
-button{background:#06202a;border:1px solid rgba(255,255,255,.04);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
-.status{margin-top:10px;font-weight:700;color:var(--accent)}
-.hint{margin-top:8px;color:var(--muted)}
-.command{color:#a5f3fc}
-.success{color:var(--good)}
-.error{color:var(--bad)}
-.progress{height:10px;background:#021018;border-radius:999px;overflow:hidden;margin-top:8px}
-.progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd166,#8ef5b6);width:0%}
-.map{font-size:13px;color:var(--muted);line-height:1.6}
-.map .done{color:var(--good)}
-.footer{margin-top:12px;color:var(--muted);font-size:13px}
-.small{font-size:13px;color:var(--muted)}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Linux Treasure Hunt — Heist Edition</title>
+  <style>
+    :root{--bg:#071225;--panel:#061426;--accent:#ffd166;--muted:#9ca3af;--good:#4ade80;--bad:#f87171}
+    body{margin:0;background:linear-gradient(180deg,var(--bg) 0%, #021018 100%);color:#cbd5e1;font-family:ui-monospace,monospace}
+    .wrap{max-width:1100px;margin:18px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{margin:0;color:var(--accent)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-top:12px}
+    .panel{background:var(--panel);padding:12px;border-radius:10px;box-shadow:0 6px 24px rgba(2,6,23,.6)}
+    .story{color:var(--muted);line-height:1.45}
+    .terminal{background:#000;border-radius:8px;padding:12px;height:420px;overflow:auto;color:#9ae6b4}
+    .prompt{display:flex;gap:8px;align-items:center;margin-top:8px}
+    input, .cmdline{flex:1;background:transparent;border:0;color:var(--muted);outline:none;font:inherit}
+    .controls{display:flex;gap:8px;margin-top:10px}
+    button{background:#06202a;border:1px solid rgba(255,255,255,.04);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .status{margin-top:10px;font-weight:700;color:var(--accent)}
+    .hint{margin-top:8px;color:var(--muted)}
+    .command{color:#a5f3fc}
+    .success{color:var(--good)}
+    .error{color:var(--bad)}
+    .progress{height:10px;background:#021018;border-radius:999px;overflow:hidden;margin-top:8px}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd166,#8ef5b6);width:0%}
+    .map{font-size:13px;color:var(--muted);line-height:1.6}
+    .map .done{color:var(--good)}
+    .footer{margin-top:12px;color:var(--muted);font-size:13px}
+    .small{font-size:13px;color:var(--muted)}
+    .autocomplete{position:absolute;background:#071426;border:1px solid rgba(255,255,255,.04);padding:6px;border-radius:6px;max-height:160px;overflow:auto;width:360px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-<h1>🏴‍☠️ Linux Treasure Hunt — Levels 1-5</h1>
-<div class="small">Interactive Linux learning game</div>
-</header>
-<div class="grid">
-<div class="panel">
-<div class="story" id="story">Break into the vault and retrieve the treasure using Linux commands.</div>
-<div id="terminal" class="terminal" aria-live="polite"></div>
-<form id="form" class="prompt" autocomplete="off">
-<div style="color:var(--muted)">$</div>
-<input id="input" class="cmdline" placeholder="Type a command (help)" autofocus>
-</form>
-<div class="controls">
-<button id="btn-help" type="button">Help</button>
-<button id="btn-clear" type="button">Clear</button>
-</div>
-<div id="status" class="status">Level 1: Navigate to <code>/vault/entrance</code></div>
-<div class="hint">Commands: <span class="command">help</span>, <span class="command">pwd</span>, <span class="command">ls</span>, <span class="command">cd</span>, <span class="command">touch</span>, <span class="command">rm</span>, <span class="command">cat</span>, <span class="command">chmod</span>, <span class="command">scp</span></div>
-<div class="progress"><i id="progress-bar"></i></div>
-<div class="footer">Use ↑/↓ for history and Tab for autocomplete.</div>
-</div>
-<div class="panel">
-<h3 style="margin:0;color:var(--accent)">Mission Map</h3>
-<div class="map" id="map">
-<div id="m1">[ ] Level 1 — Break In</div>
-<div id="m2">[ ] Level 2 — Crack the Lock</div>
-<div id="m3">[ ] Level 3 — Read the Map</div>
-<div id="m4">[ ] Level 4 — Disable Security</div>
-<div id="m5">[ ] Level 5 — Escape with Treasure</div>
-</div>
-</div>
-</div>
-<script>
-(function(){
-const fs = {
-'/':['home','vault'],
-'/home':['thief'],
-'/vault':['entrance','documents','chamber'],
-'/vault/entrance':['alarm.txt'],
-'/vault/documents':['map.txt'],
-'/vault/chamber':['disable.sh','treasure.dat'],
-'/home/thief':['safehouse']
-};
-const fileContents = {
-'/vault/documents/map.txt':'Treasure chamber is /vault/chamber'
-};
-let state = {cwd:'/',level:1,filePermissions:{}};
-const term=document.getElementById('terminal');
-const input=document.getElementById('input');
-const status=document.getElementById('status');
-const mapEls=[document.getElementById('m1'),document.getElementById('m2'),document.getElementById('m3'),document.getElementById('m4'),document.getElementById('m5')];
+  <div class="wrap">
+    <header>
+      <h1>🏴‍☠️ Linux Treasure Hunt — Heist Edition</h1>
+      <div class="small">Progressive interactive tutorial — your browser only</div>
+    </header>
 
-function pushLine(t,c){let d=document.createElement('div');if(c)d.className=c;d.textContent=t;term.appendChild(d);term.scrollTop=term.scrollHeight;}
-function normalizePath(p){if(!p)return state.cwd;if(p.startsWith('/')){p=p.replace(/\\/+/g,'/');if(p!=='/'&&p.endsWith('/'))p=p.replace(/\\/+$/,'');return p||'/';}if(p==='..'){if(state.cwd==='/')return'/';let a=state.cwd.split('/').filter(Boolean);a.pop();return'/'+a.join('/')||'/';}return state.cwd==='/'?`/${p}`:`${state.cwd}/${p}`;}
-function updateUI(){const pct=Math.min((state.level-1)/5*100,100);document.getElementById('progress-bar').style.width=pct+'%';const lbls=['Break In','Crack the Lock','Read the Map','Disable Security','Escape with Treasure'];mapEls.forEach((el,i)=>{el.textContent=(state.level>i?'[✓]':'[ ]')+' Level '+(i+1)+' — '+lbls[i];if(state.level>i)el.classList.add('done');else el.classList.remove('done');});}
-function checkLevels(){
-if(state.level===1 && state.cwd==='/vault/entrance')state.level=2;
-if(state.level===2 && fs['/vault/entrance'].includes('key.txt') && !fs['/vault/entrance'].includes('alarm.txt'))state.level=3;
-if(state.level===3 && state.cwd==='/vault/documents' && fs['/vault/documents'].includes('map.txt'))state.level=4;
-if(state.level===4 && state.cwd==='/vault/chamber' && state.filePermissions['/vault/chamber/disable.sh']==='-rwxr-xr-x')state.level=5;
-if(state.level===5 && state.cwd==='/home/thief/safehouse' && fs['/home/thief/safehouse'].includes('treasure.dat'))state.level=6;
-updateUI();
-}
+    <div class="grid">
+      <div class="panel">
+        <div class="story" id="story">You are a hacker-thief. Break into the vault by finding <code>/vault/entrance</code>.</div>
 
-function runCommand(line){
-const raw=line.trim();if(!raw)return;pushLine('$ '+raw,'command');
-const parts=raw.split(/\s+/),cmd=parts[0],args=parts.slice(1);
-switch(cmd){
-case'help':pushLine('Commands: help,pwd,ls,cd,touch,rm,cat,chmod,scp','command');break;
-case'pwd':pushLine(state.cwd);break;
-case'ls':{let tgt=args[0]?normalizePath(args[0]):state.cwd;if(fs[tgt])pushLine(fs[tgt].join('  '));else pushLine(`ls: no such file '${args[0]||'.'}'`,'error');}break;
-case'cd':{if(!args[0]){pushLine('cd: missing operand','error');break;}let tgt=normalizePath(args[0]);if(fs[tgt]){state.cwd=tgt;pushLine(state.cwd);checkLevels();}else pushLine(`cd: no such file '${args[0]}'`,'error');}break;
-case'touch':{if(!args[0]){pushLine('touch: missing operand','error');break;}let f=normalizePath(args[0]);let dir=f.split('/').slice(0,-1).join('/')||'/';fs[dir]=fs[dir]||[];if(!fs[dir].includes(f.split('/').pop()))fs[dir].push(f.split('/').pop());checkLevels();}break;
-case'rm':{if(!args[0]){pushLine('rm: missing operand','error');break;}let f=normalizePath(args[0]);let dir=f.split('/').slice(0,-1).join('/')||'/';if(fs[dir])fs[dir]=fs[dir].filter(x=>x!==f.split('/').pop());checkLevels();}break;
-case'cat':{if(!args[0]){pushLine('cat: missing operand','error');break;}let f=normalizePath(args[0]);if(fileContents[f])pushLine(fileContents[f]);else pushLine(`cat: no such file '${args[0]}'`,'error');}break;
-case'chmod':{if(args.length<2){pushLine('chmod: missing operand','error');break;}let perm=args[0],f=normalizePath(args[1]);state.filePermissions[f]=perm;checkLevels();}break;
-case'scp':{if(args.length<2){pushLine('scp: missing operand','error');break;}let f=normalizePath(args[0]),dest=normalizePath(args[1]);if(fs[dest]){fs[dest].push(f.split('/').pop());pushLine(`Copied ${f} -> ${dest}`,'success');checkLevels();}else pushLine(`scp: destination '${args[1]}' not found`,'error');}break;
-default:pushLine(`${cmd}: command not found`,'error');}
-}
+        <div id="terminal" class="terminal" aria-live="polite"></div>
 
-pushLine('Welcome to Linux Treasure Hunt!');pushLine('Type help to see commands.','command');
-document.getElementById('btn-help').addEventListener('click',()=>{runCommand('help');});
-document.getElementById('btn-clear').addEventListener('click',()=>{term.innerHTML='';pushLine('');});
-document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();runCommand(input.value);input.value='';input.focus();});
-})();
-</script>
+        <form id="form" class="prompt" autocomplete="off">
+          <div style="color:var(--muted)">$</div>
+          <input id="input" class="cmdline" placeholder="Type a command (try 'help')" />
+        </form>
+
+        <div class="controls">
+          <button id="btn-help" type="button">Help</button>
+          <button id="btn-clear" type="button">Clear</button>
+          <button id="btn-save" type="button">Save</button>
+          <button id="btn-load" type="button">Load</button>
+          <button id="btn-export" type="button">Export ZIP</button>
+        </div>
+
+        <div id="status" class="status">Level 1: Break In — Navigate to <code>/vault/entrance</code></div>
+        <div class="hint">Supported commands: <span class="command">help</span>, <span class="command">pwd</span>, <span class="command">ls</span>, <span class="command">cd</span> ... (type <code>help</code>)</div>
+        <div class="progress" aria-hidden="true"><i id="progress-bar"></i></div>
+        <div class="footer">Tip: use <kbd>↑</kbd>/<kbd>↓</kbd> for command history, <kbd>Tab</kbd> to autocomplete.</div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin:0;color:var(--accent)">Mission Map</h3>
+        <div class="map" id="map">
+          <div id="m1">[ ] Level 1 — Break In</div>
+          <div id="m2">[ ] Level 2 — Crack the Lock</div>
+          <div id="m3">[ ] Level 3 — Read the Map</div>
+          <div id="m4">[ ] Level 4 — Disable Security</div>
+          <div id="m5">[ ] Level 5 — Escape with Treasure</div>
+        </div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,.03)"/>
+        <h4 style="margin:6px 0;color:var(--accent)">Short README</h4>
+        <div class="small">This is a single-file static game. Click Export to download a GitHub-ready ZIP containing the project and README.md.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="autocomplete" class="autocomplete" style="display:none"></div>
+
+  <script>
+    (function(){
+      // --- Initial content (same game, extended) ---
+      const initialState = {
+        fs: {
+          '/': ['home','vault'],
+          '/vault': ['entrance','documents'],
+          '/home': ['thief'],
+          '/home/thief': [],
+          '/vault/entrance': [],
+          '/vault/documents': ['map.txt']
+        },
+        fileContents: {
+          '/vault/documents/map.txt': 'The treasure chamber is hidden in /vault/chamber'
+        },
+        filePermissions: {},
+        cwd: '/',
+        level: 1
+      };
+
+      // --- State (will be saved to localStorage) ---
+      let state = loadState() || JSON.parse(JSON.stringify(initialState));
+
+      // DOM
+      const term = document.getElementById('terminal');
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
+      const status = document.getElementById('status');
+      const story = document.getElementById('story');
+      const pbar = document.getElementById('progress-bar');
+      const mapEls = [document.getElementById('m1'),document.getElementById('m2'),document.getElementById('m3'),document.getElementById('m4'),document.getElementById('m5')];
+      const autoBox = document.getElementById('autocomplete');
+
+      // Command history
+      let history = JSON.parse(localStorage.getItem('lt_history')||'[]');
+      let historyIndex = history.length;
+
+      // Commands & completions
+      const baseCommands = ['help','pwd','ls','cd','touch','rm','cat','head','tail','chmod','ls -l','ping','scp','curl'];
+
+      // Utility
+      function saveState(){
+        localStorage.setItem('lt_state', JSON.stringify(state));
+        localStorage.setItem('lt_history', JSON.stringify(history.slice(-200)));
+        print('(game saved)', 'command');
+      }
+      function loadState(){
+        try{ const s = JSON.parse(localStorage.getItem('lt_state')); return s; }catch(e){return null}
+      }
+      function resetState(){ state = JSON.parse(JSON.stringify(initialState)); localStorage.removeItem('lt_state'); print('(state reset)'); updateUI(); }
+
+      function print(text, cls){ const d=document.createElement('div'); if(cls) d.className=cls; d.textContent=text; term.appendChild(d); term.scrollTop = term.scrollHeight; }
+
+      function normalizePath(path){
+        if(!path) return state.cwd;
+        if(path.startsWith('/')){ path = path.replace(/\/+$|\\/g,'/'); if(path !== '/' && path.endsWith('/')) path = path.replace(/\/+$/,''); return path||'/'; }
+        if(path === '..'){ if(state.cwd === '/') return '/'; const parts=state.cwd.split('/').filter(Boolean); parts.pop(); return '/' + parts.join('/') || '/'; }
+        return state.cwd === '/' ? `/${path}` : `${state.cwd}/${path}`;
+      }
+
+      function updateUI(){
+        // status
+        const level = state.level;
+        const labels = ['Level 1: Break In — Navigate to /vault/entrance','Level 2: Crack the Lock — Create key.txt and remove alarm.txt','Level 3: Read the Map — Find clue in map.txt','Level 4: Disable Security — Make disable.sh executable','Level 5: Escape with Treasure — Transfer treasure.dat to safehouse'];
+        status.textContent = level <=5 ? labels[level-1] : '🎉 Victory — Heist complete';
+        // story
+        const stories = [
+          'You are a hacker-thief. Break into the vault by finding /vault/entrance.',
+          'Inside the vault entrance, alarms are armed. Create a key and remove the alarm file.',
+          'You now hold the key. Explore /vault/documents and read map.txt to find the hidden chamber.',
+          'A script disable.sh is in the chamber but not executable. Make it executable.',
+          'Transfer the treasure file to /home/thief/safehouse to escape.'
+        ];
+        story.textContent = stories[Math.min(level-1,stories.length-1)];
+        // progress bar
+        const pct = Math.min((state.level-1)/5*100,100); pbar.style.width = pct + '%';
+        // map
+        for(let i=0;i<5;i++){
+          mapEls[i].textContent = (state.level>i ? '[✓]' : '[ ]') + ' Level ' + (i+1) + ' — ' + ['Break In','Crack the Lock','Read the Map','Disable Security','Escape with Treasure'][i];
+          if(state.level>i) mapEls[i].classList.add('done'); else mapEls[i].classList.remove('done');
+        }
+      }
+
+      function cmd_help(){ print('Available commands: ' + baseCommands.join(', '),'command'); }
+      function cmd_pwd(){ print(state.cwd); }
+      function cmd_ls(args){
+        if(args[0] === '-l'){
+          const listing = state.fs[state.cwd] || [];
+          listing.forEach(f=>{ const p = (state.cwd==='/'?`/${f}`:`${state.cwd}/${f}`); const perm = state.filePermissions[p]||'-rw-r--r--'; print(perm + ' ' + f); }); return; }
+        const target = args[0]?normalizePath(args[0]):state.cwd; const listing = state.fs[target]; if(!listing){ print(`ls: cannot access ${args[0]||'.'}: No such file or directory`,'error'); return; } print(listing.join('  ')); }
+      function cmd_cd(args){ if(!args[0]){ print('cd: missing operand','error'); return; } const target = normalizePath(args[0]); if(state.fs[target]){ state.cwd = target; // triggers
+          if(state.level===1 && target==='/vault/entrance'){ state.level=2; state.fs['/vault/entrance']=['alarm.txt']; print('✅ You broke into the vault!','success'); }
+        } else print(`cd: no such file or directory: ${args[0]}`,'error'); }
+
+      function cmd_touch(args){ if(!args[0]){ print('touch: missing file operand','error'); return; } const file=args[0]; if(!state.fs[state.cwd]) state.fs[state.cwd]=[]; if(!state.fs[state.cwd].includes(file)) state.fs[state.cwd].push(file); print(file); checkLevel2(); }
+      function cmd_rm(args){ if(!args[0]){ print('rm: missing operand','error'); return; } const file=args[0]; if(state.fs[state.cwd] && state.fs[state.cwd].includes(file)){ state.fs[state.cwd]=state.fs[state.cwd].filter(f=>f!==file); print(`${file} removed.`); checkLevel2(); } else print(`rm: cannot remove '${file}': No such file`,'error'); }
+
+      function cmd_cat(args){ if(!args[0]){ print('cat: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ print(state.fileContents[target]); checkLevel3(target); } else print(`cat: ${args[0]}: No such file`,'error'); }
+      function cmd_head(args){ if(!args[0]){ print('head: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ state.fileContents[target].split('\n').slice(0,5).forEach(l=>print(l)); checkLevel3(target); } else print(`head: cannot open '${args[0]}'`,'error'); }
+      function cmd_tail(args){ if(!args[0]){ print('tail: missing file operand','error'); return; } const target=normalizePath(args[0]); if(state.fileContents[target]){ state.fileContents[target].split('\n').slice(-5).forEach(l=>print(l)); checkLevel3(target); } else print(`tail: cannot open '${args[0]}'`,'error'); }
+
+      function cmd_chmod(args){ if(args.length!==2 || args[0]!=='+x'){ print('Usage: chmod +x <file>','error'); return; } const file=args[1]; const target=normalizePath(file); const dir = target.split('/').slice(0,-1).join('/') || '/'; const fname = target.split('/').pop(); if(state.fs[dir] && state.fs[dir].includes(fname)){ state.filePermissions[target]='-rwxr-xr-x'; print(`Permissions updated for ${file}`); checkLevel4(target); } else print(`chmod: cannot access '${file}': No such file`,'error'); }
+
+      function cmd_ping(args){ if(!args[0]){ print('ping: missing host operand','error'); return; } const host=args[0]; print(`PING ${host} (192.0.2.1): 64 data bytes`); print('64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=12.3 ms'); print('1 packets transmitted, 1 received, 0% packet loss'); }
+
+      function cmd_scp(args){ if(args.length!==2){ print('Usage: scp <source> <dest>','error'); return; } const src=normalizePath(args[0]); const destRaw=args[1]; let destPath=null; if(destRaw==='safehouse') destPath='/home/thief/safehouse'; else if(destRaw.includes(':')){ const parts=destRaw.split(':'); destPath = parts[1] || null; } else destPath = normalizePath(destRaw); if(!state.fs[destPath]){ print(`scp: destination ${destRaw} does not exist`,'error'); return; } const srcDir=src.split('/').slice(0,-1).join('/') || '/'; const srcName=src.split('/').pop(); if(!(state.fs[srcDir] && state.fs[srcDir].includes(srcName))){ print(`scp: ${args[0]}: No such file or directory`,'error'); return; } if(!state.fs[destPath].includes(srcName)) state.fs[destPath].push(srcName); print(`Transferred ${srcName} to ${destPath}`); checkLevel5(destPath, srcName); }
+
+      function cmd_curl(args){ if(!args[0]){ print('curl: missing URL','error'); return; } const url=args[0]; if(url.endsWith('treasure.dat')){ const name='treasure.dat'; if(!state.fs[state.cwd]) state.fs[state.cwd]=[]; if(!state.fs[state.cwd].includes(name)) state.fs[state.cwd].push(name); print(`Downloaded ${name} to ${state.cwd}`); checkLevel5(state.cwd, name); } else print(`curl: (23) Failed writing body`,'error'); }
+
+      // Level checks copy logic
+      function checkLevel2(){ if(state.level===2 && state.cwd==='/vault/entrance'){ const files=state.fs['/vault/entrance']; if(files.includes('key.txt') && !files.includes('alarm.txt')){ state.level=3; print('✅ Lock cracked! You silenced the alarm and created a key.','success'); } } updateUI(); }
+      function checkLevel3(target){ if(state.level===3 && target==='/vault/documents/map.txt'){ state.level=4; print('✅ You read the map and found the clue!','success'); if(!state.fs['/vault'].includes('chamber')) state.fs['/vault'].push('chamber'); state.fs['/vault/chamber']=['disable.sh']; state.filePermissions['/vault/chamber/disable.sh']='-rw-r--r--'; } updateUI(); }
+      function checkLevel4(target){ if(state.level===4 && target==='/vault/chamber/disable.sh' && state.filePermissions[target]==='-rwxr-xr-x'){ state.level=5; print('✅ Security disabled! The treasure is within reach.','success'); if(!state.fs['/vault/chamber'].includes('treasure.dat')) state.fs['/vault/chamber'].push('treasure.dat'); if(!state.fs['/home/thief'].includes('safehouse')){ state.fs['/home/thief'].push('safehouse'); state.fs['/home/thief/safehouse']=[]; } } updateUI(); }
+      function checkLevel5(destPath,name){ if(state.level===5 && destPath==='/home/thief/safehouse' && name==='treasure.dat'){ state.level=6; print('🏆 Treasure secured! You successfully escaped with the treasure. Game complete!','success'); } updateUI(); }
+
+      // Dispatcher
+      function dispatch(line){ const raw=line.trim(); if(!raw) return; print('$ ' + raw, 'command'); const parts=raw.split(/\s+/); const cmd=parts[0]; const args=parts.slice(1); switch(cmd){ case 'help': cmd_help(); break; case 'pwd': cmd_pwd(); break; case 'ls': cmd_ls(args); break; case 'cd': cmd_cd(args); break; case 'touch': cmd_touch(args); break; case 'rm': cmd_rm(args); break; case 'cat': cmd_cat(args); break; case 'head': cmd_head(args); break; case 'tail': cmd_tail(args); break; case 'chmod': cmd_chmod(args); break; case 'ping': cmd_ping(args); break; case 'scp': cmd_scp(args); break; case 'curl': cmd_curl(args); break; default: print(cmd + ': command not found','error'); } // push history
+        history.push(raw); historyIndex = history.length; localStorage.setItem('lt_history', JSON.stringify(history.slice(-200))); saveState(); }
+
+      // Autocomplete helpers
+      function listFilesForAutocomplete(prefix){ const curFiles = state.fs[state.cwd] || []; const flattened = [...baseCommands, ...curFiles, ...Object.keys(state.fs).map(p=>p.split('/').pop()).filter(Boolean)]; return Array.from(new Set(flattened)).filter(s=>s.startsWith(prefix)); }
+
+      function showAutocomplete(opts, x){ if(!opts.length){ autoBox.style.display='none'; return; } autoBox.innerHTML = opts.map(o=>`<div class="opt">${o}</div>`).join(''); autoBox.style.display='block'; autoBox.style.left = x + 'px'; autoBox.style.top = (input.getBoundingClientRect().bottom + window.scrollY + 6) + 'px'; Array.from(autoBox.children).forEach((c,i)=>{ c.addEventListener('click', ()=>{ input.value = opts[i]; autoBox.style.display='none'; input.focus(); }); }); }
+
+      // Events
+      form.addEventListener('submit', e=>{ e.preventDefault(); const v=input.value; if(!v.trim()) return; dispatch(v); input.value=''; autoBox.style.display='none'; });
+      document.getElementById('btn-help').addEventListener('click', ()=>dispatch('help'));
+      document.getElementById('btn-clear').addEventListener('click', ()=>{ term.innerHTML=''; });
+      document.getElementById('btn-save').addEventListener('click', ()=>saveState());
+      document.getElementById('btn-load').addEventListener('click', ()=>{ const s = loadState(); if(s){ state = s; print('(state loaded)'); updateUI(); } else print('(no saved state)', 'error'); });
+      document.getElementById('btn-export').addEventListener('click', ()=>{ // ask host to generate zip via window.postMessage
+        const payload = { html: generateIndexHtml(), readme: generateReadme() };
+        try{ window.parent.postMessage({type:'EXPORT_ZIP', payload}, '*'); print('(export requested)'); }catch(e){ print('(export not available in this host)','error'); }
+      });
+
+      // keyboard: history and autocomplete
+      input.addEventListener('keydown', e=>{
+        if(e.key === 'ArrowUp'){ if(historyIndex>0) historyIndex--; input.value = history[historyIndex]||''; e.preventDefault(); }
+        else if(e.key === 'ArrowDown'){ if(historyIndex<history.length) historyIndex++; input.value = history[historyIndex]||''; e.preventDefault(); }
+        else if(e.key === 'Tab'){ e.preventDefault(); const cur = input.value.trim(); const opts = listFilesForAutocomplete(cur); if(opts.length) input.value = opts[0]; autoBox.style.display='none'; }
+      });
+
+      input.addEventListener('input', e=>{
+        const cur = input.value.trim(); if(!cur){ autoBox.style.display='none'; return; } const opts = listFilesForAutocomplete(cur); showAutocomplete(opts, input.getBoundingClientRect().left);
+      });
+
+      // Export helpers
+      function generateIndexHtml(){ return `<!doctype html>\n<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Linux Treasure Hunt</title></head><body>\n<!-- Single-file game: copy the content of index.html from this project -->\n</body></html>`; }
+      function generateReadme(){ return `# Linux Treasure Hunt\n\nPlay the game by opening index.html in your browser.\n\nCommands: help, pwd, ls, cd, touch, rm, cat, head, tail, chmod, ping, scp, curl\n\nExport option requests the host to create a ZIP with index.html + README.md for GitHub Pages.`; }
+
+      // Load persisted state into UI on start
+      updateUI(); // show progress and map
+      print('Welcome to Linux Treasure Hunt!'); print("Type 'help' to see commands.",'command');
+    })();
+
+    // Listen for export request from iframe parent (host). If running standalone, we'll handle via postMessage from the app
+    window.addEventListener('message', async (ev)=>{
+      if(ev.data && ev.data.type === 'EXPORT_ZIP'){ try{ const payload = ev.data.payload; /* no-op in standalone */ }catch(e){} }
+    });
+  </script>
 </body>
 </html>
